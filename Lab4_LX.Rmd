@@ -1,0 +1,115 @@
+---
+title: "Lab 4"
+author: "Lucy Xie"
+date: "December 6, 2017"
+output: pdf_document
+---
+
+ 
+```{r}
+library(car)
+
+# Read in the data
+setwd('C:\\Users\\Lucy\\Documents\\Berkeley MIDS\\W203 Statistics for Data Science\\Lab 4')
+data = read.csv("crime.csv", header=TRUE, fill=TRUE, stringsAsFactors = FALSE)
+
+# Understand the size and shape of the data
+nrow(data)
+summary(data)
+head(data)
+
+# Examine the dependent variable crmrte. There are no missing rows, but
+# the variable is positively skewed. We will use a log transformation for all
+# three models generated.
+nrow(data[is.na(data$crmrte)==TRUE,])
+hist(data$crmrte)
+
+# Create preliminary correlation matrix to check for potential multicollinearity
+# between inputs, as well as identify inputs (density and wfed) with the 
+# highest correlation to crmrte. Urban also has a high correlation and may
+# need to be used as an indicator variable in a future model.
+round(cor(data[c(-1:-3)]),2)
+
+```
+
+### Model 1
+
+```{r}
+# Check inputs density, urban and wfed.
+# Density may need a log transformation due to positive skewness.
+scatterplotMatrix(data[ , c("density","wfed")])
+
+# Create a regression model using the four inputs listed above
+model1 <- lm(log(crmrte) ~ log(density) + wfed, data=data)
+
+# Check plot of model1
+plot(model1)
+```
+
+
+### Check assumptions for model1
+
+Linear population model [MET]
+```{r}
+summary(model1)
+
+# The parameters indicate a linear model.
+```
+
+Random Sampling [MET]
+```{r}
+nrow(data)
+
+# We have a large set of data (n>30).
+```
+
+No perfect multicollinearity [MET]
+```{r}
+# Check for relationships between inputs. It appears there is some relationship
+# between density and wfed.
+scatterplotMatrix(data[ , c("density","wfed")])
+
+# Also check the variable influence factor, which is below the accepted cutoff of 4 and
+# also below the conservative cutoff of 2. This indicates no perfect multicollinearity.
+vif(model1)
+```
+
+Zero-conditional mean [MET]
+```{r}
+# Check plot of residuals vs. fitted values. There does not appear to be a trend.
+plot(model1, which=1)
+
+```
+
+Homoskedasticity [MET]
+
+```{r}
+# The above plot of residuals vs. fitted values shows a slight decrease in the 
+# variance of residuals as fitted values increase.
+# The standardized residuals plot confirms the decreasing trend, but note that 
+# there are much fewer data points as fitted values increase.
+plot(model1, which=3)
+
+# Conduct Breusch-Pagan Test. The resulting p-value is just below
+# 0.05, which means we fail to reject the null hypothesis of
+# homoskedasticity.
+bptest(model1)
+
+# If the assumption were violated, we would need to use robust standard errors.
+library(sandwich)
+coeftest(model1, vcov = vcovHC)
+
+```
+
+Normality of Errors [NOT MET]
+
+```{r}
+# Check normal Q-Q plot. The residuals deviate from the diagonal line at 
+# higher and lower theoretical quantities.
+plot(model1, which=2)
+
+# Examine residuals directly. The distribution looks close to normal.
+hist(model1$residuals, breaks = 20)
+
+```
+
