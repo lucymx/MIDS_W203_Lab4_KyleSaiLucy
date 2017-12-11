@@ -1,0 +1,126 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(car)
+library(lmtest)
+library(sandwich)
+library(stargazer)
+library(datasets)
+
+setwd("C:\\Users\\kredfield\\Documents\\Berkeley\\W203\\Lab_4")
+
+#Load data "mtcars":
+data = read.csv("crime.csv")
+
+```
+
+```{r}
+for (i in data) {
+  if (is.numeric(i[1])) {
+    hist(i)
+    hist(log(i))
+  }
+}
+```
+
+```{r}
+n = 1
+for (i in data) {
+  #if (is.numeric(i[1])) {
+    (model1 = lm(crmrte ~ i, data=data))
+     print(colnames(data)[n])
+     print(BIC(model1))
+     last_BIC <- BIC(model1)
+  #}
+  n = n + 1
+}
+
+```
+
+We see from the list of BIC values above that population density seems to be the most explanatory variable for crime rate in this data. Therefore, we will take a closer look at this model specificially.
+
+```{r}
+(model1 = lm(crmrte ~ density, data=data))
+summary(model1)
+sd(data$density)
+sd(data$crmrte)
+```
+
+<!-- The coefficient on population density suggests an increase of population density by one percentage point is associated with an increase in the crime rate of .009 percentage points. Because a normal standard deviation of density is about 1.5 percentage points, we could expect a change in one standard deviation of population density to be associated with an increase in crime of about .013 percentage points, or about three quarters of a standard deviation of crime rate. This could be considered an economically significant effect. -->
+
+However, before considering this effect to be statistically appropriate, we must first evaluate whter this model meets all OLS assumptions.
+
+First, the model meets the assumption of a linear relationship since the model is a linear combination of variables.
+
+Second, the data in the model is from a dataset about which we know little. From understading gleaned in the codebook, the data seems to be exclusively from North Carolina, suggesting that we could not extrapolate any understanding from this data more broadly to the United States. However, we have no evidence that the data wasn't collected randomly from within North Carolina. In fact, if the data is exclusively from North Carolinian counties, it represents 90% of the counties in North Carolina in 1987. As long as the remaining 10 counties were excluded in a non-systemic fashion, we can assume the data is randomly collected but only from within North Carolina.
+
+```{r}
+cor(data$density,data$crmrte)
+```
+
+Third, though there is some correlation between the two variables, there is not perfect collinearity or enough multicollinearity to invalidate the model.
+
+```{r}
+plot(model1)
+```
+
+From the residiuals vs. fitted values plot above, we see that the values for residuals behave mostly linearly over all observations. The values are very near 0 and don't have a relationship over the range of fitted values. For this reason, there is no reason to suspect that the zero-conditional mean assumption is violated.
+
+```{r}
+hist(model1$residuals)
+shapiro.test(model1$residuals)
+```
+
+the Shapiro test suggest that the residuals are not normally distributed. The null hypothesis of the Shapiro test tests that the array is distributed normally. The p value is less than .01, suggesting we should reject the null. Furthermore, the histogram displays a strong right skew, suggesting non-normality. 
+
+```{r}
+bptest(model1)
+```
+
+The null hypothesis for the BP test is homoskedasticity. With this p-value, we fail to reject the null. Therefore, we can assume homoskedasticity.
+
+```{r}
+(model2 = lm(crmrte ~ density + prbarr + pctmin80 + polpc, data = data))
+summary(model2)
+```
+
+Because population density is likely not the only factor that influences the crime rate of an area, we have included additional variables in our specification of Model 2, listed above as the effect of population density, police per capita, the probability of arrest, and the percent of minorities in the county in 1980 on the crime rate.
+
+We choose these variables because:
+  - Police per capita should be closely related to crime since it is the primary deterrant of crime
+  - The probability of arrest is a proxy for how averse people are to committing crime in that community. The crime rate should decrease as people's aversion to arrest increases.
+  - Previous studies have drawn a link between the presence of minority populations and the crime rate. The inclusion of this factor is consistent with those studies.
+
+We see that all of these variables have a statistically significant effect on the crime rate. Further the adjusted Rsquared has gone up to .6552 from the value of .5243 in model 1. As a result, we can accept that these variables increase the predictive power of the model over the decreases in parsmiony. 
+
+In the tests below, we see no major deviations from the diagnostics we saw in Model 1:
+
+```{r}
+vif(model2)
+shapiro.test(model2$residuals)
+bptest(model2)
+plot(model2)
+```
+As a result, all of the met and not met assumptions from the previous model hold into this model as well.
+
+Finally, we specify a model with all variables in the dataset included. 
+
+```{r}
+(model3 = lm(crmrte ~ county + density + prbarr + prbconv + prbpris + avgsen + polpc + taxpc + west + central + urban + pctmin80 + wcon + wtuc +wtrd + wfir +wser + wmfg + wfed + wsta + wloc + mix + pctymle, data = data))
+summary(model3)
+```
+
+```{r}
+vif(model3)
+shapiro.test(model3$residuals)
+bptest(model3)
+plot(model3)
+```
+
+However, in this model, we see many of our assumptions violated. The residuals are not near 0, the error is not normally distributed, there are several points with high residuals and leverage, some variables have high degrees of collinearity, and we have introduced heteroskedacity. Therefore, we would not consider this model to be accurate and would instead use Model 2 as the most robust.
+
