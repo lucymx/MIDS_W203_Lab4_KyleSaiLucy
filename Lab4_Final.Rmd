@@ -14,41 +14,45 @@ library(stargazer)
 library(datasets)
 
 #Load dataset
-setwd('C:\\Users\\Lucy\\Documents\\Berkeley MIDS\\W203 Statistics for Data Science\\Lab 4')
+#setwd('C:\\Users\\Lucy\\Documents\\Berkeley MIDS\\W203 Statistics for Data Science\\Lab 4')
 data = read.csv("crime.csv")
 
 ```
 
-### Exploratory Data Analysis
+### Exploratory Data Analysis (EDA)
 
-We first conducted initial exploratory analysis of the data to identify anomalies and potential transformations.
+An initial exploratory analysis of the data is conducted to identify anomalies and potential transformations. The size of the dataset is large but relatively small at `r nrow(data)`. The variables to begin the EDA is as following:
+```{r}
+str(data)
+```
 
+A summary and snapshot of the data is taken to examine for anomalies:
 ```{r}
 # Examine size and shape of data
-nrow(data)
-str(data)
 summary(data)
 head(data)
 ```
 
-While no missing values were identified, the summary table shows that some of the inputs expressed as probabilities have values over 100%, which is impossible. We will subset the data and exclude any row where "prbarr", "prbconv" or "prbpris" is greater than 1. Note the size of the dataset has decreased from 90 to 80 rows.
+While no missing values(NAs) are identified, the summary table shows that some of the inputs expressed as probabilities have values over 100%, which is impossible. The data is subset and excluded of any rows where "prbarr", "prbconv" or "prbpris" is greater than 1. The size of the dataset decreases from 90 to 80 rows.
 
 ```{r}
 # Filter out values of prbarr, prbconv and prbpris >1 and count 
 # the remaining rows
 data_sub <- data[which((data$prbarr <= 1) & (data$prbconv <= 1) & (data$prbpris <= 1)), ]
 nrow(data_sub)
+head(data_sub)
 ```
 
-Next we focused on the dependent variable, crime rate. 
+The dependent variable, crime rate(`crmrte`) is further explored. 
 
 ```{r}
 # Examine the dependent variable crmrte. 
 hist(data_sub$crmrte)
+qqnorm(data_sub$crmrte)
 ```
-The variable is positively skewed, but we will choose not to perform a lognormal transformation. [INSERT SAI EXPLANATION HERE]
+The variable is positively skewed as further supported by the qqnorm plot. Since the expectation of the population model from background research supports the skewed distribution of crimes committed per person at a low mean(`r mean(data_sub$crmrte)`) in relationship with the other normalized variables on the order of per capita, probability and per square mile, a log-log transformation will not be utilized in models.
 
-We then focus on the potential independent variables. We created preliminary correlation matrix to check for potential multicollinearity between inputs, as well as to identify inputs with the highest correlation to crmrte. We also created a univariate model for every input variable and compared the BIC scores.
+Focusing on the potential independent variables, a preliminary correlation matrix is created to check for potential multicollinearity between inputs, as well as to identify inputs with the highest correlation to crmrte. A univariate model is also created for every input variable and compared the BIC scores.
 
 ```{r}
 # Create correlation matrix
@@ -67,18 +71,18 @@ for (i in data) {
 }
 ```
 
-Both methods show that population density, urban indicator and federal wage have the highest individual influence on crime rate. In addition, we examined police per capita as a potential covariate to the model.
+Both methods show that population density, urban indicator and federal wage have the highest individual influence on crime rate. In addition, examined police per capita is explored as a potential covariate to the model.
 
-```{r}
+```{r, warning=FALSE}
 # Examine population density, urban indicator, federal wage and police per capita
 scatterplotMatrix(data_sub[ , c("density","urban","wfed","polpc")])
 
 ```
-The positively skewed distributions of density and police per capita indicate that lognormal transformation of the variables is needed.
+The positively skewed distributions of population density and police per capita indicates that lognormal transformation of the variables is needed.
 
 ### Model 1
 
-As identified in the EDA, the top three variables with the highest influence on crime rate were population density, urban indicator and federal wage. We chose to eliminate the urban indiactor from our first model due to its collinearity with population density; by definition, regions classified as a SMSA have high population densities. We also chose to exclude federal wage due to lack of practical signifiance in relation to crime rate. Therefore, our first model examines the relationship between crime rate and population density, which we first transformed.
+As identified in the EDA, the top three variables with the highest influence on crime rate were population density, urban indicator and federal wage.  The urban indicator from the first model will be eliminated due to its collinearity with population density; by definition, regions classified as a SMSA have high population densities. The federal wage is also excluded due to lack of practical signifiance in relation to crime rate. Therefore, the first model examines the relationship between crime rate and population density, which is first transformed.
 
 ```{r}
 # Create model of crime rate based on log(density)
@@ -88,13 +92,13 @@ summary(model1)
 
 <!-- The coefficient on population density suggests an increase of population density by one percentage point is associated with an increase in the crime rate of .009 percentage points. Because a normal standard deviation of density is about 1.5 percentage points, we could expect a change in one standard deviation of population density to be associated with an increase in crime of about .013 percentage points, or about three quarters of a standard deviation of crime rate. This could be considered an economically significant effect. -->
 
-However, before considering this effect to be statistically appropriate, we must first evaluate whether this model meets all OLS assumptions.
+However, before considering this effect to be statistically appropriate, it must be first evaluated whether this model meets all OLS assumptions.
 
 First, the model meets the assumption of a linear relationship since the model is a linear combination of variables.
 
-Second, the data in the model is from a dataset about which we know little. From understading gleaned in the codebook, the data seems to be exclusively from North Carolina, suggesting that we could not extrapolate any understanding from this data more broadly to the United States. However, we have no evidence that the data wasn't collected randomly from within North Carolina. In fact, if the data is exclusively from North Carolinian counties, it represents 90% of the counties in North Carolina in 1987. As long as the remaining 10 counties were excluded in a non-systemic fashion, we can assume the data is randomly collected but only from within North Carolina.
+Second, the data in the model is from a dataset about little is known. From references in the codebook, the data is exclusively from North Carolina, suggesting that any extrapolation of the population model from this data cannot be accurately performed. However, there is no evidence that the data was not collected randomly from within North Carolina. In fact, if the data is exclusively from North Carolinian counties, it represents 90% of the counties in North Carolina as of 1987. As long as the remaining 10 counties were excluded in a non-systemic fashion, we can assume the data is randomly collected but only from within North Carolina.
 
-Third, because there is only one input variable to this model, there is no risk of multicollinearity between inputs. We have already mitigated this by eliminating the urban indicator as a model input.
+Third, because there is only one input variable to this model, there is no risk of multicollinearity between inputs. This is mitigated by eliminating the urban indicator as a model input.
 
 ```{r}
 # Check for zero-conditional mean
@@ -102,9 +106,7 @@ Third, because there is only one input variable to this model, there is no risk 
 plot(model1, which=1)
 ```
 
-From the residiuals vs. fitted values plot above, we see that the values for residuals decrease, then increase along the fitted values axis. This is evidence that the zero-conditional mean assumption is violated.
-
-[CAN WE CITE OLS ASYMPTOTICS HERE, OR IS THE SAMPLE SIZE TOO SMALL?]
+From the residiuals vs. fitted values plot above, is can be seen that the values for residuals decrease, then increase along the fitted values axis. This is evidence that the zero-conditional mean assumption is violated. Furthermore, since the band of residuals are not evenly disributed, heteroskedasticity is indicated. However, this is further explored due to the relatively small sample size.
 
 ```{r}
 # Check for normality of errors
@@ -118,7 +120,7 @@ shapiro.test(model1$residuals)
 plot(model1, which=2)
 ```
 
-Both the histogram of residuals and Shapiro test suggest that the residuals are not normally distributed. The null hypothesis of the Shapiro states that the array is distributed normally. The p value is less than .01, suggesting we should reject the null. Finally, the residuals deviate from the diagonal line at lower and higher theoretical quantities, which also indicates non-normality.
+Both the histogram of residuals and Shapiro test suggest that the residuals are not normally distributed. The null hypothesis of the Shapiro states that the array is distributed normally. The p value is less than .01, suggesting that the null hypothesis is to be rejected. Finally, the residuals deviate from the diagonal line at lower and higher theoretical quantities, which further indicates non-normality.
 
 ```{r}
 # Check for homoskedasticity
@@ -129,7 +131,7 @@ plot(model1, which=3)
 bptest(model1)
 
 ```
-The above plot of residuals vs. fitted values shows a slight increase in the variance of residuals as fitted values increase. The standardized residuals plot confirms the increasing trend, but note that it decreases slightly at the high end of the fitted values axis, where there are much fewer data points. Therefore, we must use a more robust method like the Breusch-Pagan test. The null hypothesis for the BP test is homoskedasticity. With this p-value, we fail to reject the null; therefore, we can assume homoskedasticity.
+The above plot of residuals vs. fitted values shows a slight increase in the variance of residuals as fitted values increase. The standardized residuals plot confirms the increasing trend, but note that it decreases slightly at the high end of the fitted values axis, where there are much fewer data points. Therefore, a more robust method such as the Breusch-Pagan test must be used. The null hypothesis for the BP test is homoskedasticity. With this p-value, we fail to reject the null; therefore, homoskedasticity can be assumed.
 
 
 ### Model 2
@@ -138,40 +140,45 @@ The above plot of residuals vs. fitted values shows a slight increase in the var
 summary(model2)
 ```
 
-Because population density is likely not the only factor that influences the crime rate of an area, we have included additional variables in our specification of Model 2, listed above as the effect of population density, police per capita, the probability of arrest, and the percent of minorities in the county in 1980 on the crime rate.
+Because population density is likely not the only factor that influences the crime rate of an area, additional variables are included in the specification of Model 2, listed above as the effect of population density, police per capita, the probability of arrest, and the percent of minorities in the county in 1980 on the crime rate.
 
-We choose these variables because:
+These variables are chosen since,
   - Police per capita should be closely related to crime since it is the primary deterrant of crime
   - The probability of arrest is a proxy for how averse people are to committing crime in that community. The crime rate should decrease as people's aversion to arrest increases.
   - Previous studies have drawn a link between the presence of minority populations and the crime rate. The inclusion of this factor is consistent with those studies.
 
-We see that all of these variables have a statistically significant effect on the crime rate. Further the adjusted Rsquared has gone up to .6552 from the value of .5243 in model 1. As a result, we can accept that these variables increase the predictive power of the model over the decreases in parsmiony. 
+It can be seen that all of these variables have a statistically significant effect on the crime rate. Further the adjusted Rsquared has increased to .6552 from the value of .5243 in model 1. As a result, it can be determined that these variables increase the predictive power of the model over the decreases in parsmiony. 
 
 In the tests below, we see no major deviations from the diagnostics we saw in Model 1:
-
 ```{r}
 vif(model2)
 shapiro.test(model2$residuals)
 bptest(model2)
 plot(model2)
 ```
-As a result, all of the met and not met assumptions from the previous model hold into this model as well.
+As a result, all of the confirmed and unconfirmed assumptions from the previous model hold into this model as well.
 
-Finally, we specify a model with all variables in the dataset included. 
+Finally, a model is specified with all variables in the dataset included. 
 
 ```{r}
 (model3 = lm(crmrte ~ county + density + prbarr + prbconv + prbpris + avgsen + polpc + taxpc + west + central + urban + pctmin80 + wcon + wtuc +wtrd + wfir +wser + wmfg + wfed + wsta + wloc + mix + pctymle, data = data))
 summary(model3)
 ```
 
-```{r}
+```{r, warning=FALSE}
 vif(model3)
 shapiro.test(model3$residuals)
 bptest(model3)
 plot(model3)
 ```
 
-However, in this model, we see many of our assumptions violated. The residuals are not near 0, the error is not normally distributed, there are several points with high residuals and leverage, some variables have high degrees of collinearity, and we have introduced heteroskedacity. Therefore, we would not consider this model to be accurate and would instead use Model 2 as the most robust.
+However, in this model, many of the assumptions are violated. The residuals are not near 0, the error is not normally distributed, there are several points with high residuals and leverage, some variables have high degrees of collinearity, and heteroskedacity has been introduced. Therefore, this model is considered to be inaccurate and a more robust Model 2 is used with the compiled regression table as following:
+
+```{r, warning=FALSE}
+se.model2 = sqrt(diag(vcovHC(model2)))
+stargazer(model2, type = "text", omit.stat = "f", se = list(se.model2), star.cutoffs = c(0.05, 0.01, 0.001 ))
+```
+
 
 
 ### Causality in the Model

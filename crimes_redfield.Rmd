@@ -12,7 +12,7 @@ library(sandwich)
 library(stargazer)
 library(datasets)
 
-setwd("C:\\Users\\kredfield\\Documents\\Berkeley\\W203\\Lab_4")
+#setwd("C:\\Users\\kredfield\\Documents\\Berkeley\\W203\\Lab_4")
 
 #Load data "mtcars":
 data = read.csv("crime.csv")
@@ -123,4 +123,8 @@ plot(model3)
 ```
 
 However, in this model, we see many of our assumptions violated. The residuals are not near 0, the error is not normally distributed, there are several points with high residuals and leverage, some variables have high degrees of collinearity, and we have introduced heteroskedacity. Therefore, we would not consider this model to be accurate and would instead use Model 2 as the most robust.
+
+```{r}
+model_urban <- 
+```
 
