@@ -1,0 +1,60 @@
+---
+title: "Lab4"
+author: "Sai Ravuru"
+date: "12/11/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## EDA
+
+```{r}
+library(car)
+
+data = read.csv("crime.csv", header=TRUE, fill=TRUE, stringsAsFactors = FALSE)
+
+
+nrow(data)
+str(data)
+summary(data)
+
+head(data)
+
+
+
+```
+
+Based on the EDA of data variables above, the anomalies are as following:
+* The probability of arrest, conviction or prison sentence cannot be higher than one.
+
+Therefore, the anomalies above will be excluded:
+```{r}
+data_noamomalies <- data[which((data$prbarr < 1) & (data$prbconv < 1) & (data$prbpris < 1)), ]
+head(data_noamomalies)
+nrow(data_noamomalies)
+```
+
+Exploring the crime rates and their associated probabilities even further:
+```{r}
+hist(data_noamomalies$crmrte)
+hist(data_noamomalies$prbarr)
+hist(data_noamomalies$prbconv)
+hist(data_noamomalies$prbpris)
+```
+The crimes committed per person, the probability of arrest and the probability of conviction have a very positively skewed distribution. On the other hand, the probability of prison sentence has a relatively normal distribution.
+
+Exploring the dependent variables such as police per capita and people per square mile:
+```{r}
+hist(data_noamomalies$polpc)
+hist(data_noamomalies$density)
+```
+The positively skewed distributions indicate that transformation of the variables is needed. This is due to the inverse potential relationship between the police per capita and people per square mile.
+
+
+```{r}
+
+```
+
