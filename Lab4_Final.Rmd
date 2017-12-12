@@ -1,7 +1,10 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Lab 4"
+author: "Kyle Redfield, Sai Ruvuru, Lucy Xie"
+date: "December 12, 2017"
+output: pdf_document
 ---
+
 
 ```{r}
 library(car)
@@ -170,19 +173,20 @@ plot(model3)
 
 However, in this model, we see many of our assumptions violated. The residuals are not near 0, the error is not normally distributed, there are several points with high residuals and leverage, some variables have high degrees of collinearity, and we have introduced heteroskedacity. Therefore, we would not consider this model to be accurate and would instead use Model 2 as the most robust.
 
+
+### Causality in the Model
+
+The three models we specify above range in their ability to be interpreted causally. The first model has only one variable. Though it meets the assumptions required to be considered unbiased, it almost certainly has omitted variable bias. Model 2 inclues more variables and still meets the assumptions. There is likely less ommitted variable bias and more ability to discuss causality in Model 2. However, Model 3 does not meet the assumptions required for unbiasedness or consistency. Therefore, while we can perhaps observe the direction of the coefficients, we are unable to draw any conclusions about causality from it.
+
 ### Appendix 
 
 (code that has been removed - we could add back in depending on space)
 
 Exploring the crime rates and their associated probabilities even further:
 ```{r}
-hist(data_noamomalies$crmrte)
-hist(data_noamomalies$prbarr)
-hist(data_noamomalies$prbconv)
-hist(data_noamomalies$prbpris)
+hist(data_sub$crmrte)
+hist(data_sub$prbarr)
+hist(data_sub$prbconv)
+hist(data_sub$prbpris)
 ```
 The crimes committed per person, the probability of arrest and the probability of conviction have a very positively skewed distribution. On the other hand, the probability of prison sentence has a relatively normal distribution.
-
-### Causality in the Model
-
-The three models we specify above range in their ability to be interpreted causally. The first model has only one variable. Though it meets the assumptions required to be considered unbiased, it almost certainly has omitted variable bias. Model 2 inclues more variables and still meets the assumptions. There is likely less ommitted variable bias and more ability to discuss causality in Model 2. However, Model 3 does not meet the assumptions required for unbiasedness or consistency. Therefore, while we can perhaps observe the direction of the coefficients, we are unable to draw any conclusions about causality from it.
