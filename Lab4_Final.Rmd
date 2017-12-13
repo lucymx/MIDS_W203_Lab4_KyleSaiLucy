@@ -61,26 +61,26 @@ The variable is positively skewed as further supported by the qqnorm plot. Since
 
 ## Input Selection
 
-Focusing on the potential independent variables, a preliminary correlation matrix is created to check for potential multicollinearity between inputs, as well as to identify inputs with the highest correlation to crmrte. A univariate model is also created for every input variable and compared the BIC scores.
-
+Focusing on the potential independent variables, we present a preliminary correlation matrix to check for potential multicollinearity between inputs, as well as to identify inputs with the highest correlation to crmrte. 
 ```{r}
 # Create correlation matrix
 round(cor(data[c(-1:-3)]),2)
+```
 
+We then create a series of univariate models for every possible input variable to assess each variables explanatory power for the crime rate of a county.
+```{r}
 # Print BIC score for linear model between each input and crime rate
 n = 1
 for (i in data) {
-  #if (is.numeric(i[1])) {
     (model1 = lm(crmrte ~ i, data=data))
      print(colnames(data)[n])
      print(BIC(model1))
      last_BIC <- BIC(model1)
-  #}
   n = n + 1
 }
 ```
 
-Both methods show that population density, urban indicator and federal wage have the highest individual influence on crime rate. In addition, examined police per capita is explored as a potential covariate to the model.
+Both methods show that population density, urban indicator and federal wage have the highest individual influence on crime rate. In addition, we examine police per capita as a potential covariate in the model.
 
 ```{r, warning=FALSE}
 # Examine population density, urban indicator, federal wage and police per capita
@@ -91,7 +91,7 @@ The positively skewed distributions of population density and police per capita 
 
 # Model 1
 
-As identified in the EDA, the top three variables with the highest influence on crime rate were population density, urban indicator and federal wage.  The urban indicator from the first model will be eliminated due to its collinearity with population density; by definition, regions classified as a SMSA have high population densities. The federal wage is also excluded due to lack of practical signifiance in relation to crime rate. Therefore, the first model examines the relationship between crime rate and population density, which is first transformed.
+As identified in the EDA, the top three variables with the highest influence on crime rate were population density, urban indicator and federal wage.  The urban indicator from the first model will be eliminated due to its collinearity with population density since, by definition, regions classified as a SMSA have high population densities. The federal wage is also excluded for lack of a practical relationship to the crime rate. Therefore, the first model examines the relationship between crime rate and population density, which is first transformed.
 
 ```{r}
 # Create model of crime rate based on log(density)
@@ -114,7 +114,7 @@ Third, because there is only one input variable to this model, there is no risk 
 plot(model1, which=1)
 ```
 
-From the residuals vs. fitted values plot above, is can be seen that the values for residuals decrease, then increase along the fitted values axis. This normally is a sign that the zero-conditional mean assumption is violated; however, the tail ends of the fitted values have very few data points and have high influence on the "U" shape of the curve. Overall, the residuals are near zero and we accept the zero-conditional mean assumption.
+From the residuals vs. fitted values plot above, we see that the values for residuals decrease, then increase along the fitted values axis. Normally, this is a sign that the zero-conditional mean assumption is violated; however, the tail ends of the fitted values have very few data points and have high influence on the "U" shape of the curve. Overall, the residuals are near zero and we accept the zero-conditional mean assumption.
 
 ```{r}
 # Check for normality of errors
@@ -128,9 +128,9 @@ shapiro.test(model1$residuals)
 plot(model1, which=2)
 ```
 
-Both the histogram of residuals and Shapiro test suggest that the residuals are not normally distributed. The null hypothesis of the Shapiro states that the array is distributed normally. The p value is less than .01, suggesting that the null hypothesis is to be rejected. Finally, the residuals deviate from the diagonal line at lower and higher theoretical quantities, which further indicates non-normality.
+Both the histogram of residuals and Shapiro test suggest that the residuals are not normally distributed. The null hypothesis of the Shapiro states that the array is distributed normally. With a p-value less than .01 for the Shaprio test, we reject the null that the residuals are distributed normally. To reinforce this test, we see from the plot above that the residuals deviate from the diagonal line at lower and higher theoretical quantiles, which further indicates non-normality.
 
-[HOW DO WE MITIGATE? CAN RELY ON SAMPLE SIZE > 30?]
+However, because our sample size is above the n=30 required to satisfy the assumptions of the Central Limit Theorem, we can cite the Central Limit Theorem to satisfy this assumption. Because the errors will fit to a normal distribution if sampled, we still satisfy the assumption of normality of errors.
 
 ```{r}
 # Check for homoskedasticity
@@ -198,7 +198,7 @@ coeftest(model2, vcov = vcovHC)
 vcovHC(model2)
 
 ```
-With the exception of homoskedasticity, all of the confirmed and unconfirmed assumptions from the previous model hold into this model as well. There are some stronger signs of conditional mean on the residuals vs. fitted values plot, but this is again heavily influenced by the sparase data points on either end of the fitted values axis.
+With the exception of homoskedasticity, all of the confirmed and unconfirmed assumptions from the previous model hold into this model as well. There are some stronger signs of conditional mean on the residuals vs. fitted values plot, but this is again heavily influenced by the sparse data points on either end of the fitted values axis.
 
 ## Statistical and Practical Significance
 ```{r}
@@ -232,7 +232,7 @@ plot(model3, which=3)
 bptest(model3)
 ```
 
-One difference in this model is that errors are now normally distributed; we fail to reject the hypothesis of normality given in the Shapiro test. However, many of the other assumptions are violated. The residuals are not near 0, there are several points with high residuals and leverage, some variables have high degrees of collinearity, and heteroskedacity is again introduced.
+One difference in this model is that errors are now normally distributed, though we fail to reject the hypothesis of normality of these errors as found in the Shapiro test. However, many of the other assumptions are violated. The residuals are not near 0, there are several points with high residuals and leverage, some variables have high degrees of collinearity, and heteroskedacity is again introduced.
 
 ## Statistical and Practical Signifiance
 ```{r}
@@ -240,7 +240,17 @@ summary(model3)
 ```
 The significance codes show that several of the inputs used in Model 3 are not statistically significant. The most significant inputs were density, probablity of arrest, police per capita, and service industry wage, most of which were captured in Model 2 based on our prior understanding of crime.
 
-[COMMENT ON PRACTICAL SIGNIFICANCE]
+As seen in the comparison table below, the practical effect of the variables analyzed in Models 1 and 2 is within .001 of the practical effect of Model 2. The remaining variables, with the exception of the percentage of young males in a county, have practical effects very near 0. With the exception of the effect of the percentage of young males, we can consider the rest of the variables not considered in Model 2 to be practically insignificant due to their nearness to 0. 
+
+```{r}
+mean(data$pctymle)
+mean(data$crmrte)
+sd(data$pctymle)
+sd(data$crmrte)
+```
+
+
+The practical significance of the percent of young males in a county stands out from the rest. In this model, the effect of a unit increase in the percentage of young males is near .115  crimes per person. Therefore, a one standard deviation change in the percentage of young males results in a change of .002 crimes per person, which represents only a tenth of the standard deviation of crime rate. In this we see that, though the coefficient on the percentage of males seems high, it may not carry that much practical weight.
 
 The results for all three models are compiled in the following, applying robust standard errors to Models 2 and 3:
 
